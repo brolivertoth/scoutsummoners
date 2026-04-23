@@ -27,6 +27,15 @@ public class EventController {
     @Autowired
     private LargeEventPlanService largeEventPlanService;
 
+    @GetMapping
+    public String showEvents(Authentication authentication, Model model) {
+        User user = userService.findByUsername(authentication.getName());
+        model.addAttribute("events", eventService.getUserEvents(user));
+        model.addAttribute("user", user);
+        model.addAttribute("userPlans", largeEventPlanService.getPlansVisibleToUser(user));
+        return "events";
+    }
+
     @GetMapping("/new")
     public String showCreateEventForm(Authentication authentication, Model model) {
         User user = userService.findByUsername(authentication.getName());
@@ -64,7 +73,7 @@ public class EventController {
 
         eventService.createEvent(event);
 
-        return "redirect:/dashboard";
+        return "redirect:/events";
     }
 
     @GetMapping("/{id}")
@@ -73,7 +82,7 @@ public class EventController {
         User user = userService.findByUsername(authentication.getName());
 
         if (event == null) {
-            return "redirect:/dashboard";
+            return "redirect:/events";
         }
 
         // Check if user has access to this event
@@ -83,7 +92,7 @@ public class EventController {
                 || event.getInvitedUsers().contains(user);
 
         if (!hasAccess) {
-            return "redirect:/dashboard";
+            return "redirect:/events";
         }
 
         model.addAttribute("event", event);
@@ -101,7 +110,7 @@ public class EventController {
         User user = userService.findByUsername(authentication.getName());
 
         if (event == null || !event.getCreator().getId().equals(user.getId())) {
-            return "redirect:/dashboard";
+            return "redirect:/events";
         }
 
         model.addAttribute("event", event);
@@ -123,7 +132,7 @@ public class EventController {
         User user = userService.findByUsername(authentication.getName());
 
         if (event == null || !event.getCreator().getId().equals(user.getId())) {
-            return "redirect:/dashboard";
+            return "redirect:/events";
         }
 
         event.setTitle(title);
@@ -145,7 +154,7 @@ public class EventController {
             eventService.deleteEvent(id);
         }
 
-        return "redirect:/dashboard";
+        return "redirect:/events";
     }
 
     @PostMapping("/{id}/join")

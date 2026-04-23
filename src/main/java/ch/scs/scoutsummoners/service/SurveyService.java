@@ -47,6 +47,15 @@ public class SurveyService {
         return surveyRepository.findByClosedFalseOrderByCreatedAtDesc();
     }
 
+    public List<TimeSlotSurvey> getOpenSurveysForUser(User user) {
+        return surveyRepository.findByClosedFalseOrderByCreatedAtDesc().stream()
+                .filter(survey -> survey.isOpenToAll()
+                        || survey.getCreator().getId().equals(user.getId())
+                        || survey.getInvitedUsers().contains(user))
+                .limit(5)
+                .toList();
+    }
+
     public TimeSlotSurvey getSurveyById(Long id) {
         return surveyRepository.findById(id).orElse(null);
     }

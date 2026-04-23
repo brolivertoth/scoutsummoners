@@ -33,7 +33,31 @@ public class SecurityConfig {
 
         http
             .authenticationManager(authenticationManager)
-            .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity
+            // Enable CSRF protection
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/admin/approve/**", "/admin/reject/**") // Token-based endpoints
+            )
+            // Security headers
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.deny()) // Prevent clickjacking
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives("default-src 'self'; " +
+                        "script-src 'self' 'unsafe-inline' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://cdn.jsdelivr.net/ https://cdnjs.cloudflare.com/; " +
+                        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net/; " +
+                        "font-src 'self' https://cdn.jsdelivr.net/; " +
+                        "frame-src https://www.google.com/recaptcha/; " +
+                        "connect-src 'self' https://www.google.com/ https://www.gstatic.com/; " +
+                        "img-src 'self' data:;")
+                )
+            )
+            // Session management
+            .sessionManagement(session -> session
+                .sessionFixation(fixation -> fixation.migrateSession()) // Prevent session fixation
+                .sessionConcurrency(concurrency -> concurrency
+                    .maximumSessions(1) // One session per user
+                    .maxSessionsPreventsLogin(false) // Allow new login, invalidate old session
+                )
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/register", "/css/**", "/js/**", "/login", "/admin/approve/**", "/admin/reject/**").permitAll()
                 .anyRequest().authenticated()
@@ -54,7 +78,10 @@ public class SecurityConfig {
                 .permitAll()
             )
             .logout(logout -> logout
+                .logoutUrl("/logout")
                 .logoutSuccessUrl("/login?logout")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
                 .permitAll()
             );
 

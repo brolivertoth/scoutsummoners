@@ -23,6 +23,24 @@ public class EventService {
         return eventRepository.findAllUserEvents(user);
     }
 
+    public List<Event> getUserEvents(User user) {
+        return eventRepository.findAllUserEvents(user);
+    }
+
+    public List<Event> getUpcomingEventsForUser(User user, LocalDateTime start, LocalDateTime end) {
+        return eventRepository.findAll().stream()
+                .filter(event ->
+                    (event.isOpenToAll()
+                        || event.getCreator().getId().equals(user.getId())
+                        || event.getParticipants().contains(user)
+                        || event.getInvitedUsers().contains(user))
+                    && event.getStartTime().isAfter(start)
+                    && event.getStartTime().isBefore(end))
+                .sorted((e1, e2) -> e1.getStartTime().compareTo(e2.getStartTime()))
+                .limit(5)
+                .toList();
+    }
+
     public List<Event> getEventsVisibleToUser(User user) {
         List<Event> allEvents = eventRepository.findAll();
         return allEvents.stream()

@@ -8,49 +8,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">ScoutSummoners</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/dashboard}">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/calendar}">Calendar</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/surveys}">Time Surveys</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="largeEventDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Large Event Planning
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="largeEventDropdown">
-                            <li><a class="dropdown-item" th:href="@{/large-event-planning}">Overview</a></li>
-                            <li><hr class="dropdown-divider" th:if="${userPlans != null && !userPlans.empty}"></li>
-                            <li th:each="plan : ${userPlans}">
-                                <a class="dropdown-item" th:href="@{/large-event-planning/{id}(id=${plan.id})}" th:text="${plan.name}"></a>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <span class="navbar-text me-3">Welcome!</span>
-                    </li>
-                    <li class="nav-item">
-                        <form th:action="@{/logout}" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-outline-light btn-sm">Logout</button>
-                        </form>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <div th:replace="~{fragments/navbar :: navbar(activePage='events')}"></div>
 
     <div class="container mt-4">
         <div class="row justify-content-center">
