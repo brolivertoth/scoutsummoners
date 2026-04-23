@@ -1,0 +1,300 @@
+/* Black and Magenta Color Scheme with improved contrast */
+:root {
+    --primary-color: #ff33ff;
+    --primary-dark: #cc00cc;
+    --primary-light: #ff99ff;
+    --bg-dark: #0a0a0a;
+    --bg-secondary: #1f1f1f;
+    --bg-card: #2d2d2d;
+    --text-light: #ffffff;
+    --text-muted: #e0e0e0;
+    --border-color: #ff33ff;
+    --success-color: #4caf50;
+    --warning-color: #ff9800;
+    --danger-color: #f44336;
+}
+
+/* Modals */
+.modal-content {
+    background-color: var(--bg-card);
+    border: 2px solid var(--border-color);
+    color: var(--text-light);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+}
+
+.modal-body {
+    background-color: var(--bg-card);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+}
+
+.modal-title {
+    color: var(--primary-color);
+}
+
+.btn-close {
+    filter: invert(1);
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+}
+
+/* Navbar */
+.navbar-dark {
+    background-color: var(--bg-secondary) !important;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.navbar-brand {
+    color: var(--primary-color) !important;
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+/* Cards */
+.card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-light);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(255, 0, 255, 0.3);
+}
+
+.card-title {
+    color: var(--primary-color);
+}
+
+.event-card {
+    cursor: pointer;
+}
+
+/* Forms */
+.form-control {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-light);
+}
+
+.form-control:focus {
+    background-color: var(--bg-secondary);
+    border-color: var(--primary-light);
+    color: var(--text-light);
+    box-shadow: 0 0 0 0.2rem rgba(255, 0, 255, 0.25);
+}
+
+.form-label {
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #4d3a4d;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--bg-dark);
+}
+
+.btn-primary:focus {
+    box-shadow: 0 0 0 0.2rem rgba(255, 0, 255, 0.5);
+}
+
+.btn-secondary {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+    color: var(--text-light);
+}
+
+.btn-secondary:hover {
+    background-color: var(--bg-card);
+    border-color: var(--primary-light);
+    color: var(--primary-light);
+}
+
+.btn-outline-light:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--bg-dark);
+}
+
+/* Alerts */
+.alert-success {
+    background-color: #1a4d1a;
+    border-color: #2d7a2d;
+    color: #90ee90;
+}
+
+.alert-danger {
+    background-color: #4d1a1a;
+    border-color: #7a2d2d;
+    color: #ff6b6b;
+}
+
+.alert-info {
+    background-color: #1a1a4d;
+    border-color: #2d2d7a;
+    color: #6bb6ff;
+}
+
+/* List Groups */
+.list-group-item {
+    background-color: var(--bg-card);
+    border-color: var(--border-color);
+    color: var(--text-light);
+}
+
+/* Links */
+a {
+    color: var(--primary-color);
+}
+
+a:hover {
+    color: var(--primary-light);
+}
+
+.link-primary {
+    color: var(--primary-color) !important;
+}
+
+.link-primary:hover {
+    color: var(--primary-light) !important;
+}
+
+/* Badges */
+.badge {
+    font-weight: 500;
+}
+
+.bg-primary {
+    background-color: var(--primary-color) !important;
+    color: var(--bg-dark) !important;
+}
+
+/* Text colors */
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* Shadows */
+.shadow-lg {
+    box-shadow: 0 1rem 3rem rgba(255, 51, 255, 0.3) !important;
+}
+
+/* Navbar text */
+.navbar-text {
+    color: var(--text-light) !important;
+}
+
+.nav-link {
+    color: var(--text-muted) !important;
+}
+
+.nav-link.active,
+.nav-link:hover {
+    color: var(--primary-light) !important;
+}
+
+/* Icons */
+i {
+    color: var(--primary-color);
+}
+
+/* Small text */
+small {
+    color: var(--text-muted);
+}
+
+/* Improved button contrast */
+.btn-success {
+    background-color: #4d3a4d !important;
+    border-color: var(--success-color) !important;
+    color: var(--success-color) !important;
+}
+
+.btn-success:hover {
+    background-color: var(--success-color) !important;
+    border-color: var(--success-color) !important;
+    color: #ffffff !important;
+}
+
+.btn-warning {
+    background-color: #4d3a4d !important;
+    border-color: var(--warning-color) !important;
+    color: var(--warning-color) !important;
+    font-weight: 600;
+}
+
+.btn-warning:hover {
+    background-color: var(--warning-color) !important;
+    border-color: var(--warning-color) !important;
+    color: #000000 !important;
+}
+
+.btn-danger {
+    background-color: #3a3a3a !important;
+    border-color: var(--border-color) !important;
+    color: var(--primary-color) !important;
+}
+
+.btn-danger:hover {
+    background-color: var(--danger-color) !important;
+    border-color: var(--danger-color) !important;
+    color: #ffffff !important;
+}
+
+/* Tables */
+.table {
+    color: var(--text-light);
+    border-color: var(--border-color);
+}
+
+.table thead th {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.table tbody tr {
+    border-color: var(--border-color);
+}
+
+.table tbody td {
+    background-color: var(--bg-card);
+    border-color: var(--border-color);
+    color: var(--text-light);
+}
+
+.table-hover tbody tr:hover td {
+    background-color: var(--bg-secondary);
+    color: var(--primary-light);
+}
+
+.table-striped tbody tr:nth-of-type(odd) td {
+    background-color: var(--bg-card);
+}
+
+.table-striped tbody tr:nth-of-type(even) td {
+    background-color: var(--bg-secondary);
+}

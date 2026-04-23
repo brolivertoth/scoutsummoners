@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${plan.name} + ' - ScoutSummoners'">Plan Detail - ScoutSummoners</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Quill Rich Text Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .ql-editor {
+            min-height: 200px;
+        }
+        .comment-thread {
+            border-left: 3px solid #ff33ff;
+            padding-left: 1rem;
+            margin-left: 1rem;
+        }
+        .comment-card {
+            background-color: #1f1f1f;
+            border: 1px solid #ff33ff;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .reply-form {
+            display: none;
+            margin-top: 1rem;
+        }
+        .attachment-preview img {
+            max-width: 200px;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin: 0.5rem;
+        }
+        .comment-card img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .comment-card .ql-editor img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">ScoutSummoners</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/dashboard}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/calendar}">Calendar</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/surveys}">Time Surveys</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle active" href="#" id="largeEventDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Large Event Planning
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="largeEventDropdown">
+                            <li><a class="dropdown-item" th:href="@{/large-event-planning}">Overview</a></li>
+                            <li><hr class="dropdown-divider" th:if="${!plans.empty}"></li>
+                            <li th:each="plan : ${plans}">
+                                <a class="dropdown-item" th:href="@{/large-event-planning/{id}(id=${plan.id})}" th:text="${plan.name}"></a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <span class="navbar-text me-3">Welcome, <span th:text="${user.username}"></span>!</span>
+                    </li>
+                    <li class="nav-item">
+                        <form th:action="@{/logout}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-outline-light btn-sm">Logout</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Breadcrumb and Title -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 th:text="${plan.name}">Plan Name</h2>
+                <p class="text-muted" th:text="${plan.description}">Description</p>
+            </div>
+            <div th:if="${isCreator}">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editPlanModal">
+                    <i class="bi bi-pencil"></i> Edit Info
+                </button>
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deletePlanModal">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Event Description & Planning</h5>
+                <button th:if="${isCreator}" class="btn btn-sm btn-primary" onclick="toggleEditMode()">
+                    <i class="bi bi-pencil"></i> Edit Content
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Display Mode -->
+                <div id="content-display">
+                    <div th:if="${plan.content != null}" th:utext="${plan.content}"></div>
+                    <p th:if="${plan.content == null}" class="text-muted">No content yet. Click Edit Content to add planning details.</p>
+                </div>
+
+                <!-- Edit Mode -->
+                <div id="content-editor" style="display: none;">
+                    <form th:action="@{/large-event-planning/{id}/update-content(id=${plan.id})}" method="post" id="content-form">
+                        <div id="quill-editor"></div>
+                        <input type="hidden" name="content" id="content-input">
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-success">Save Content</button>
+                            <button type="button" class="btn btn-secondary" onclick="toggleEditMode()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Attachments -->
+                <div class="mt-4">
+                    <h6>Attachments</h6>
+                    <div class="attachment-list">
+                        <div th:if="${plan.attachments.empty}" class="text-muted">No attachments</div>
+                        <div th:each="attachment : ${plan.attachments}" class="d-flex align-items-center mb-2">
+                            <a th:href="@{/large-event-planning/attachments/{id}/download(id=${attachment.id})}"
+                               th:text="${attachment.fileName}" class="me-2"></a>
+                            <span class="text-muted small" th:text="'(' + ${attachment.fileSize / 1024} + ' KB)'"></span>
+                            <form th:action="@{/large-event-planning/attachments/{id}/delete(id=${attachment.id})}"
+                                  method="post" class="ms-auto" onsubmit="return confirm('Delete this attachment?');">
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                    <form th:action="@{/large-event-planning/{id}/upload-attachment(id=${plan.id})}"
+                          method="post" enctype="multipart/form-data" class="mt-3">
+                        <div class="input-group">
+                            <input type="file" class="form-control" name="file" required>
+                            <button class="btn btn-primary" type="submit">Upload</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time Survey Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Time Survey</h5>
+            </div>
+            <div class="card-body">
+                <!-- Show existing survey -->
+                <div th:if="${survey != null}">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="mb-1" th:text="${survey.title}">Survey Title</h6>
+                            <p class="text-muted mb-0" th:text="${survey.description}">Survey Description</p>
+                        </div>
+                        <a th:href="@{/surveys/{id}(id=${survey.id})}" class="btn btn-primary">
+                            <i class="bi bi-calendar-check"></i> View & Vote
+                        </a>
+                    </div>
+
+                     <!--<div class="alert alert-light border">
+                        <small class="text-muted">
+                            <i class="bi bi-eye"></i>
+                            <span th:if="${survey.openToAll}">Visible to all users</span>
+                            <span th:if="${!survey.openToAll}">Visible to invited users only</span>
+                            <span class="ms-3"><i class="bi bi-clock-history"></i> Created <span th:text="${#temporals.format(survey.createdAt, 'dd MMM yyyy')}"></span></span>
+                        </small>
+                    </div> -->
+
+                    <!-- Survey Results Table -->
+                    <h6 class="mt-3 mb-2">Current Votes:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Time Slot</th>
+                                    <th class="text-center">Votes</th>
+                                    <th>Participants</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${survey.timeSlots.empty}">
+                                    <td colspan="3" class="text-muted text-center">No time slots yet</td>
+                                </tr>
+                                <tr th:each="slot : ${survey.timeSlots}">
+                                    <td>
+                                        <div>
+                                            <i class="bi bi-calendar-event"></i>
+                                            <strong th:text="${#temporals.format(slot.startTime, 'dd MMM yyyy HH:mm')}"></strong>
+                                        </div>
+                                        <div th:if="${slot.hasEndTime}" class="text-muted small">
+                                            <i class="bi bi-arrow-right"></i>
+                                            <span th:text="${#temporals.format(slot.endTime, 'dd MMM yyyy HH:mm')}"></span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary" th:text="${slot.voters.size()}">0</span>
+                                    </td>
+                                    <td>
+                                        <div th:if="${slot.voters.empty}" class="text-muted small">No votes yet</div>
+                                        <div th:if="${!slot.voters.empty}">
+                                            <span th:each="voter, iterStat : ${slot.voters}"
+                                                  th:text="${voter.username} + ${iterStat.last ? '' : ', '}"
+                                                  class="small"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Create new survey form (only for creator) -->
+                <div th:if="${survey == null && isCreator}">
+                    <p class="text-muted">Create a time survey to let participants vote on preferred dates and times.</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSurveyModal">
+                        <i class="bi bi-calendar-plus"></i> Create Time Survey
+                    </button>
+                </div>
+
+                <!-- No survey message for non-creators -->
+                <div th:if="${survey == null && !isCreator}">
+                    <p class="text-muted">No time survey has been created for this event yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Discussion & Comments</h5>
+            </div>
+            <div class="card-body">
+                <!-- Add New Comment -->
+                <div class="mb-4">
+                    <h6>Start a new discussion</h6>
+                    <form th:action="@{/large-event-planning/{id}/add-comment(id=${plan.id})}"
+                          method="post" enctype="multipart/form-data" id="new-comment-form">
+                        <div class="mb-2">
+                            <label class="form-label">Title (optional)</label>
+                            <input type="text" class="form-control" name="title" placeholder="Give your comment a title...">
+                        </div>
+                        <div id="new-comment-editor" class="mb-2"></div>
+                        <input type="hidden" name="content" id="new-comment-content">
+                        <div class="mb-2">
+                            <label class="form-label">Attach files (optional)</label>
+                            <input type="file" class="form-control" name="attachments" multiple>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post Comment</button>
+                    </form>
+                </div>
+
+                <!-- Comment Threads -->
+                <div th:if="${plan.comments.empty}" class="text-muted">No comments yet. Be the first to comment!</div>
+
+                <div th:each="comment : ${plan.comments}" th:if="${comment.parentComment == null}" class="mb-4">
+                    <div class="comment-card">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <strong th:text="${comment.author.username}">Author</strong>
+                                <span class="text-muted small ms-2" th:text="${#temporals.format(comment.createdAt, 'dd MMM yyyy HH:mm')}"></span>
+                            </div>
+                            <form th:if="${comment.author.id == user.id}"
+                                  th:action="@{/large-event-planning/comments/{id}/delete(id=${comment.id})}"
+                                  method="post" onsubmit="return confirm('Delete this comment?');">
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </div>
+                        <h6 th:if="${comment.title != null && !comment.title.isEmpty()}" th:text="${comment.title}" class="mb-2"></h6>
+                        <div th:utext="${comment.content}">Comment content</div>
+
+                        <!-- Comment Attachments -->
+                        <div th:if="${!comment.attachments.empty}" class="attachment-preview">
+                            <div th:each="attachment : ${comment.attachments}">
+                                <a th:href="@{/large-event-planning/attachments/{id}/download(id=${attachment.id})}"
+                                   th:text="${attachment.fileName}"></a>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-sm btn-link" th:onclick="'toggleReplyForm(' + ${comment.id} + ')'">
+                            <i class="bi bi-reply"></i> Reply
+                        </button>
+
+                        <!-- Reply Form -->
+                        <div th:id="'reply-form-' + ${comment.id}" class="reply-form">
+                            <form th:action="@{/large-event-planning/{id}/add-comment(id=${plan.id})}"
+                                  method="post" enctype="multipart/form-data" th:id="'reply-form-element-' + ${comment.id}">
+                                <input type="hidden" name="parentCommentId" th:value="${comment.id}">
+                                <div class="mb-2">
+                                    <label class="form-label small">Title (optional)</label>
+                                    <input type="text" class="form-control form-control-sm" name="title" placeholder="Give your reply a title...">
+                                </div>
+                                <div th:id="'reply-editor-' + ${comment.id}" class="mb-2"></div>
+                                <input type="hidden" name="content" th:id="'reply-content-' + ${comment.id}">
+                                <input type="file" class="form-control form-control-sm mb-2" name="attachments" multiple>
+                                <button type="submit" class="btn btn-sm btn-primary">Post Reply</button>
+                                <button type="button" class="btn btn-sm btn-secondary" th:onclick="'toggleReplyForm(' + ${comment.id} + ')'">Cancel</button>
+                            </form>
+                        </div>
+
+                        <!-- Replies -->
+                        <div th:if="${!comment.replies.empty}" class="comment-thread mt-3">
+                            <div th:each="reply : ${comment.replies}" class="comment-card">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <strong th:text="${reply.author.username}">Author</strong>
+                                        <span class="text-muted small ms-2" th:text="${#temporals.format(reply.createdAt, 'dd MMM yyyy HH:mm')}"></span>
+                                    </div>
+                                    <form th:if="${reply.author.id == user.id}"
+                                          th:action="@{/large-event-planning/comments/{id}/delete(id=${reply.id})}"
+                                          method="post" onsubmit="return confirm('Delete this reply?');">
+                                        <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                                <h6 th:if="${reply.title != null && !reply.title.isEmpty()}" th:text="${reply.title}" class="mb-2"></h6>
+                                <div th:utext="${reply.content}">Reply content</div>
+
+                                <!-- Reply Attachments -->
+                                <div th:if="${!reply.attachments.empty}" class="attachment-preview">
+                                    <div th:each="attachment : ${reply.attachments}">
+                                        <a th:href="@{/large-event-planning/attachments/{id}/download(id=${attachment.id})}"
+                                           th:text="${attachment.fileName}"></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Plan Modal -->
+    <div class="modal fade" id="editPlanModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Plan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form th:action="@{/large-event-planning/{id}/update(id=${plan.id})}" method="post">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="editPlanName" class="form-label">Plan Name</label>
+                            <input type="text" class="form-control" id="editPlanName" name="name" th:value="${plan.name}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPlanDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editPlanDescription" name="description" rows="4" required th:text="${plan.description}"></textarea>
+                        </div>
+
+                        <hr>
+                        <h6>Visibility Settings</h6>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="editOpenToAll" name="openToAll" value="true" th:checked="${plan.openToAll}" onchange="toggleEditUserSelection()">
+                                <label class="form-check-label" for="editOpenToAll">
+                                    Visible to all users
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3" id="editUserSelectionDiv" th:style="${plan.openToAll} ? 'display: none;' : 'display: block;'">
+                            <label class="form-label">Invite specific users:</label>
+                            <select class="form-select" name="invitedUserIds" multiple size="5">
+                                <option th:each="u : ${allUsers}" th:value="${u.id}" th:text="${u.username}"
+                                        th:if="${u.id != user.id}"
+                                        th:selected="${plan.invitedUsers.contains(u)}"></option>
+                            </select>
+                            <small class="form-text text-muted">Hold Ctrl (Cmd on Mac) to select multiple users</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deletePlanModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete "<span th:text="${plan.name}"></span>"? This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form th:action="@{/large-event-planning/{id}/delete(id=${plan.id})}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Survey Modal -->
+    <div class="modal fade" id="createSurveyModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Time Survey</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form th:action="@{/large-event-planning/{id}/create-survey(id=${plan.id})}" method="post">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="surveyTitle" class="form-label">Survey Title</label>
+                            <input type="text" class="form-control" id="surveyTitle" name="surveyTitle"
+                                   th:value="${plan.name + ' - Time Survey'}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="surveyDescription" class="form-label">Survey Description</label>
+                            <textarea class="form-control" id="surveyDescription" name="surveyDescription"
+                                      rows="3" required>Vote on your preferred dates and times for this event.</textarea>
+                        </div>
+
+                        <div class="alert alert-info mb-3" style="position: sticky; top: 0; z-index: 10;">
+                            <strong><i class="bi bi-info-circle"></i> Visibility Settings:</strong><br>
+                            This survey will inherit the same visibility settings as this plan:
+                            <strong th:if="${plan.openToAll}" class="text-primary">Visible to all users</strong>
+                            <strong th:if="${!plan.openToAll}" class="text-primary">Visible to invited users only</strong>
+                            <span th:if="${!plan.openToAll}">
+                                (<span th:text="${plan.invitedUsers.size()}">0</span> users invited)
+                            </span>
+                        </div>
+
+                        <hr>
+                        <h6>Time Slots</h6>
+                        <p class="text-muted small">Add possible dates and times for this event. Participants will vote on their availability.</p>
+
+                        <div id="timeSlotsContainer">
+                            <!-- Initial time slot -->
+                            <div class="time-slot-row mb-3 p-3 border rounded">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Start Date & Time</label>
+                                        <input type="datetime-local" class="form-control" name="startTimes" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">End Date & Time (Optional)</label>
+                                        <div class="input-group">
+                                            <input type="datetime-local" class="form-control end-time-input"
+                                                   name="endTimes" disabled>
+                                            <button class="btn btn-outline-secondary" type="button" onclick="toggleEndTime(this)">
+                                                <i class="bi bi-check-square"></i>
+                                            </button>
+                                        </div>
+                                        <input type="hidden" name="hasEndTimes" value="false">
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removeTimeSlot(this)" style="display: none;">
+                                    <i class="bi bi-trash"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="addTimeSlot()">
+                            <i class="bi bi-plus-circle"></i> Add Another Time Slot
+                        </button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Survey</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script th:src="@{/js/app.js}"></script>
+    <script th:inline="javascript">
+        var quill = null;
+        var initialContent = /*[[${plan.content}]]*/ '';
+
+        function toggleEditMode() {
+            var displayDiv = document.getElementById('content-display');
+            var editorDiv = document.getElementById('content-editor');
+
+            if (editorDiv.style.display === 'none') {
+                // Show editor
+                displayDiv.style.display = 'none';
+                editorDiv.style.display = 'block';
+
+                // Initialize Quill if not already initialized
+                if (!quill) {
+                    quill = new Quill('#quill-editor', {
+                        theme: 'snow',
+                        modules: {
+                            toolbar: [
+                                ['bold', 'italic', 'underline', 'strike'],
+                                ['blockquote', 'code-block'],
+                                [{ 'header': 1 }, { 'header': 2 }],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                [{ 'indent': '-1'}, { 'indent': '+1' }],
+                                [{ 'size': ['small', false, 'large', 'huge'] }],
+                                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                                [{ 'color': [] }, { 'background': [] }],
+                                [{ 'align': [] }],
+                                ['link', 'image'],
+                                ['clean']
+                            ]
+                        }
+                    });
+                }
+
+                // Set content
+                if (initialContent) {
+                    quill.root.innerHTML = initialContent;
+                }
+            } else {
+                // Hide editor
+                displayDiv.style.display = 'block';
+                editorDiv.style.display = 'none';
+            }
+        }
+
+        // Submit form with Quill content
+        document.getElementById('content-form').onsubmit = function() {
+            document.getElementById('content-input').value = quill.root.innerHTML;
+            return true;
+        };
+
+        // Initialize Quill for new comment
+        var newCommentQuill = new Quill('#new-comment-editor', {
+            theme: 'snow',
+            placeholder: 'Share your thoughts...',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'code-block'],
+                    [{ 'header': 1 }, { 'header': 2 }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    ['link', 'image'],
+                    ['clean']
+                ]
+            }
+        });
+
+        // Submit new comment form
+        document.getElementById('new-comment-form').onsubmit = function() {
+            document.getElementById('new-comment-content').value = newCommentQuill.root.innerHTML;
+            return true;
+        };
+
+        // Store reply editors
+        var replyEditors = {};
+
+        function toggleReplyForm(commentId) {
+            var replyForm = document.getElementById('reply-form-' + commentId);
+            if (replyForm.style.display === 'none' || replyForm.style.display === '') {
+                replyForm.style.display = 'block';
+
+                // Initialize Quill editor for this reply if not already initialized
+                if (!replyEditors[commentId]) {
+                    replyEditors[commentId] = new Quill('#reply-editor-' + commentId, {
+                        theme: 'snow',
+                        placeholder: 'Write a reply...',
+                        modules: {
+                            toolbar: [
+                                ['bold', 'italic', 'underline', 'strike'],
+                                ['blockquote', 'code-block'],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                [{ 'color': [] }, { 'background': [] }],
+                                ['link', 'image'],
+                                ['clean']
+                            ]
+                        }
+                    });
+
+                    // Setup form submission for this reply
+                    document.getElementById('reply-form-element-' + commentId).onsubmit = function() {
+                        document.getElementById('reply-content-' + commentId).value = replyEditors[commentId].root.innerHTML;
+                        return true;
+                    };
+                }
+            } else {
+                replyForm.style.display = 'none';
+            }
+        }
+
+        function toggleEditUserSelection() {
+            var checkbox = document.getElementById('editOpenToAll');
+            var userDiv = document.getElementById('editUserSelectionDiv');
+            userDiv.style.display = checkbox.checked ? 'none' : 'block';
+        }
+
+        // Survey Time Slot Management
+        function addTimeSlot() {
+            var container = document.getElementById('timeSlotsContainer');
+            var newSlot = document.createElement('div');
+            newSlot.className = 'time-slot-row mb-3 p-3 border rounded';
+            newSlot.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Start Date & Time</label>
+                        <input type="datetime-local" class="form-control" name="startTimes" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">End Date & Time (Optional)</label>
+                        <div class="input-group">
+                            <input type="datetime-local" class="form-control end-time-input"
+                                   name="endTimes" disabled>
+                            <button class="btn btn-outline-secondary" type="button" onclick="toggleEndTime(this)">
+                                <i class="bi bi-check-square"></i>
+                            </button>
+                        </div>
+                        <input type="hidden" name="hasEndTimes" value="false">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removeTimeSlot(this)">
+                    <i class="bi bi-trash"></i> Remove
+                </button>
+            `;
+            container.appendChild(newSlot);
+            updateRemoveButtons();
+        }
+
+        function removeTimeSlot(button) {
+            var slotRow = button.closest('.time-slot-row');
+            slotRow.remove();
+            updateRemoveButtons();
+        }
+
+        function updateRemoveButtons() {
+            var slots = document.querySelectorAll('.time-slot-row');
+            slots.forEach(function(slot, index) {
+                var removeBtn = slot.querySelector('.btn-danger');
+                if (removeBtn) {
+                    removeBtn.style.display = slots.length > 1 ? 'inline-block' : 'none';
+                }
+            });
+        }
+
+        function toggleEndTime(button) {
+            var inputGroup = button.closest('.input-group');
+            var endTimeInput = inputGroup.querySelector('.end-time-input');
+            var hiddenInput = inputGroup.parentElement.querySelector('input[type="hidden"]');
+            var icon = button.querySelector('i');
+
+            if (endTimeInput.disabled) {
+                endTimeInput.disabled = false;
+                endTimeInput.required = true;
+                hiddenInput.value = 'true';
+                icon.className = 'bi bi-check-square-fill';
+                button.classList.add('active');
+            } else {
+                endTimeInput.disabled = true;
+                endTimeInput.required = false;
+                endTimeInput.value = '';
+                hiddenInput.value = 'false';
+                icon.className = 'bi bi-check-square';
+                button.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>

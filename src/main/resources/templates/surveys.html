@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Slot Surveys - ScoutSummoners</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">ScoutSummoners</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/dashboard}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/calendar}">Calendar</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" th:href="@{/surveys}">Time Surveys</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="largeEventDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Large Event Planning
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="largeEventDropdown">
+                            <li><a class="dropdown-item" th:href="@{/large-event-planning}">Overview</a></li>
+                            <li><hr class="dropdown-divider" th:if="${userPlans != null && !userPlans.empty}"></li>
+                            <li th:each="plan : ${userPlans}">
+                                <a class="dropdown-item" th:href="@{/large-event-planning/{id}(id=${plan.id})}" th:text="${plan.name}"></a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <span class="navbar-text me-3">Welcome, <span th:text="${user.username}"></span>!</span>
+                    </li>
+                    <li class="nav-item">
+                        <form th:action="@{/logout}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-outline-light btn-sm">Logout</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Time Slot Surveys</h2>
+            <a th:href="@{/surveys/new}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Survey
+            </a>
+        </div>
+
+        <div th:if="${surveys.empty}" class="alert alert-info">
+            No surveys yet. Create one to find the best time with your friends!
+        </div>
+
+        <div class="row">
+            <div th:each="survey : ${surveys}" class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title" th:text="${survey.title}">Survey Title</h5>
+                            <span th:if="${survey.closed}" class="badge bg-secondary">Closed</span>
+                            <span th:unless="${survey.closed}" class="badge bg-success">Active</span>
+                        </div>
+                        <p class="card-text" th:text="${survey.description}">Survey Description</p>
+                        <p class="card-text">
+                            <small>
+                                <i class="bi bi-person"></i> 
+                                Created by <span th:text="${survey.creator.username}"></span>
+                            </small>
+                        </p>
+                        <p class="card-text">
+                            <small>
+                                <i class="bi bi-clock"></i> 
+                                <span th:text="${survey.timeSlots.size()}"></span> time slot(s)
+                            </small>
+                        </p>
+                        <p th:if="${survey.createdEvent != null}" class="card-text">
+                            <small class="text-success">
+                                <i class="bi bi-check-circle"></i> Event created
+                            </small>
+                        </p>
+                        <a th:href="@{/surveys/{id}(id=${survey.id})}" class="btn btn-sm btn-primary">View & Vote</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
