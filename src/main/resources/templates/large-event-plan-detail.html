@@ -12,6 +12,37 @@
     <style>
         .ql-editor {
             min-height: 200px;
+            color: #ffffff;
+        }
+        .ql-toolbar {
+            background-color: #2a2a2a;
+            border-color: #ff33ff !important;
+        }
+        .ql-container {
+            border-color: #ff33ff !important;
+        }
+        .ql-toolbar .ql-stroke {
+            stroke: #ffffff !important;
+        }
+        .ql-toolbar .ql-fill {
+            fill: #ffffff !important;
+        }
+        .ql-toolbar .ql-picker-label {
+            color: #ffffff !important;
+        }
+        .ql-toolbar button:hover,
+        .ql-toolbar button.ql-active {
+            background-color: #ff33ff !important;
+        }
+        .ql-toolbar .ql-picker-options {
+            background-color: #2a2a2a;
+            border-color: #ff33ff;
+        }
+        .ql-toolbar .ql-picker-item {
+            color: #ffffff !important;
+        }
+        .ql-snow .ql-picker-options .ql-picker-item:hover {
+            background-color: #ff33ff !important;
         }
         .comment-thread {
             border-left: 3px solid #ff33ff;
@@ -71,9 +102,14 @@
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Event Description & Planning</h5>
-                <button th:if="${isCreator}" class="btn btn-sm btn-primary" onclick="toggleEditMode()">
-                    <i class="bi bi-pencil"></i> Edit Content
-                </button>
+                <div th:if="${isCreator}">
+                    <button class="btn btn-sm btn-primary" onclick="toggleEditMode()">
+                        <i class="bi bi-pencil"></i> Edit Content
+                    </button>
+                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#uploadAttachmentModal">
+                        <i class="bi bi-paperclip"></i> Upload Attachment
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <!-- Display Mode -->
@@ -95,10 +131,9 @@
                 </div>
 
                 <!-- Attachments -->
-                <div class="mt-4">
+                <div class="mt-4" th:if="${!plan.attachments.empty}">
                     <h6>Attachments</h6>
                     <div class="attachment-list">
-                        <div th:if="${plan.attachments.empty}" class="text-muted">No attachments</div>
                         <div th:each="attachment : ${plan.attachments}" class="d-flex align-items-center mb-2">
                             <a th:href="@{/large-event-planning/attachments/{id}/download(id=${attachment.id})}"
                                th:text="${attachment.fileName}" class="me-2"></a>
@@ -109,13 +144,6 @@
                             </form>
                         </div>
                     </div>
-                    <form th:action="@{/large-event-planning/{id}/upload-attachment(id=${plan.id})}"
-                          method="post" enctype="multipart/form-data" class="mt-3">
-                        <div class="input-group">
-                            <input type="file" class="form-control" name="file" required>
-                            <button class="btn btn-primary" type="submit">Upload</button>
-                        </div>
-                    </form>
                 </div>
             </div>
         </div>
@@ -212,21 +240,29 @@
             <div class="card-body">
                 <!-- Add New Comment -->
                 <div class="mb-4">
-                    <h6>Start a new discussion</h6>
-                    <form th:action="@{/large-event-planning/{id}/add-comment(id=${plan.id})}"
-                          method="post" enctype="multipart/form-data" id="new-comment-form">
-                        <div class="mb-2">
-                            <label class="form-label">Title (optional)</label>
-                            <input type="text" class="form-control" name="title" placeholder="Give your comment a title...">
-                        </div>
-                        <div id="new-comment-editor" class="mb-2"></div>
-                        <input type="hidden" name="content" id="new-comment-content">
-                        <div class="mb-2">
-                            <label class="form-label">Attach files (optional)</label>
-                            <input type="file" class="form-control" name="attachments" multiple>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Post Comment</button>
-                    </form>
+                    <h6 class="mb-3">Start a new discussion</h6>
+                    <div class="comment-card">
+                        <form th:action="@{/large-event-planning/{id}/add-comment(id=${plan.id})}"
+                              method="post" enctype="multipart/form-data" id="new-comment-form">
+                            <div class="mb-3">
+                                <label class="form-label">Title (optional)</label>
+                                <input type="text" class="form-control" name="title" placeholder="Give your comment a title...">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Content</label>
+                                <div id="new-comment-editor" class="mb-2"></div>
+                                <input type="hidden" name="content" id="new-comment-content">
+                            </div>
+                            <input type="file" class="form-control" name="attachments" multiple style="display: none;" id="new-comment-attachments">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send"></i> Post Comment
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('new-comment-attachments').click()">
+                                <i class="bi bi-paperclip"></i> Attach Files
+                            </button>
+                            <small class="text-muted ms-2" id="new-comment-file-count"></small>
+                        </form>
+                    </div>
                 </div>
 
                 <!-- Comment Threads -->
@@ -256,9 +292,14 @@
                             </div>
                         </div>
 
-                        <button class="btn btn-sm btn-link" th:onclick="'toggleReplyForm(' + ${comment.id} + ')'">
-                            <i class="bi bi-reply"></i> Reply
-                        </button>
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-secondary" th:onclick="'toggleReplyForm(' + ${comment.id} + ')'">
+                                <i class="bi bi-reply"></i> Reply
+                            </button>
+                            <button th:if="${!comment.replies.empty}" class="btn btn-sm btn-outline-secondary" th:onclick="'toggleReplies(' + ${comment.id} + ')'" th:id="'toggle-replies-btn-' + ${comment.id}">
+                                <i class="bi bi-chevron-down"></i> <span th:text="${comment.replies.size()} + ' ' + (${comment.replies.size()} == 1 ? 'Reply' : 'Replies')">Replies</span>
+                            </button>
+                        </div>
 
                         <!-- Reply Form -->
                         <div th:id="'reply-form-' + ${comment.id}" class="reply-form">
@@ -278,7 +319,7 @@
                         </div>
 
                         <!-- Replies -->
-                        <div th:if="${!comment.replies.empty}" class="comment-thread mt-3">
+                        <div th:if="${!comment.replies.empty}" class="comment-thread mt-3" th:id="'replies-' + ${comment.id}" style="display: none;">
                             <div th:each="reply : ${comment.replies}" class="comment-card">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <div>
@@ -374,6 +415,31 @@
                         <button type="submit" class="btn btn-danger">Delete</button>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Attachment Modal -->
+    <div class="modal fade" id="uploadAttachmentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload Attachment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form th:action="@{/large-event-planning/{id}/upload-attachment(id=${plan.id})}"
+                      method="post" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="attachmentFile" class="form-label">Select File</label>
+                            <input type="file" class="form-control" id="attachmentFile" name="file" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -638,6 +704,32 @@
                 hiddenInput.value = 'false';
                 icon.className = 'bi bi-check-square';
                 button.classList.remove('active');
+            }
+        }
+
+        // Update file count display for new comment
+        document.getElementById('new-comment-attachments').addEventListener('change', function() {
+            var fileCount = this.files.length;
+            var fileCountDisplay = document.getElementById('new-comment-file-count');
+            if (fileCount > 0) {
+                fileCountDisplay.textContent = fileCount + ' file' + (fileCount > 1 ? 's' : '') + ' selected';
+            } else {
+                fileCountDisplay.textContent = '';
+            }
+        });
+
+        // Toggle replies visibility
+        function toggleReplies(commentId) {
+            var repliesDiv = document.getElementById('replies-' + commentId);
+            var toggleBtn = document.getElementById('toggle-replies-btn-' + commentId);
+            var icon = toggleBtn.querySelector('i');
+
+            if (repliesDiv.style.display === 'none') {
+                repliesDiv.style.display = 'block';
+                icon.className = 'bi bi-chevron-up';
+            } else {
+                repliesDiv.style.display = 'none';
+                icon.className = 'bi bi-chevron-down';
             }
         }
     </script>

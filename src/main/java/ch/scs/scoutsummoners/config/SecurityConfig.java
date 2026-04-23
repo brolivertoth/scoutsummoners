@@ -42,12 +42,12 @@ public class SecurityConfig {
                 .frameOptions(frame -> frame.deny()) // Prevent clickjacking
                 .contentSecurityPolicy(csp -> csp
                     .policyDirectives("default-src 'self'; " +
-                        "script-src 'self' 'unsafe-inline' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://cdn.jsdelivr.net/ https://cdnjs.cloudflare.com/; " +
-                        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net/; " +
+                        "script-src 'self' 'unsafe-inline' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://cdn.jsdelivr.net/ https://cdnjs.cloudflare.com/ https://cdn.quilljs.com/; " +
+                        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net/ https://cdn.quilljs.com/; " +
                         "font-src 'self' https://cdn.jsdelivr.net/; " +
                         "frame-src https://www.google.com/recaptcha/; " +
                         "connect-src 'self' https://www.google.com/ https://www.gstatic.com/; " +
-                        "img-src 'self' data:;")
+                        "img-src 'self' data: blob:;")
                 )
             )
             // Session management
