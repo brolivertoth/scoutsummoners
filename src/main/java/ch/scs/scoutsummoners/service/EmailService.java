@@ -23,14 +23,14 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
-    public void sendAccountApprovalRequest(String username, Long userId) {
+    public void sendAccountApprovalRequest(String username, Long userId, String approvalToken) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
         message.setTo(adminEmail);
         message.setSubject("New Account Registration - Approval Required");
 
-        String approvalUrl = baseUrl + "/admin/approve/" + userId;
-        String rejectionUrl = baseUrl + "/admin/reject/" + userId;
+        String approvalUrl = baseUrl + "/admin/approve/" + userId + "?token=" + approvalToken;
+        String rejectionUrl = baseUrl + "/admin/reject/" + userId + "?token=" + approvalToken;
 
         message.setText(
             "A new user has registered:\n\n" +

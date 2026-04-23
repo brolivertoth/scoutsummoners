@@ -5,7 +5,9 @@ import ch.scs.scoutsummoners.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class UserService {
@@ -26,6 +28,11 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(password));
         user.setRole("USER");
         user.setEnabled(false); // Account starts disabled, requires admin approval
+
+        // Generate secure approval token
+        String token = UUID.randomUUID().toString();
+        user.setApprovalToken(token);
+        user.setApprovalTokenExpiry(LocalDateTime.now().plusDays(7)); // 7-day expiry
 
         return userRepository.save(user);
     }

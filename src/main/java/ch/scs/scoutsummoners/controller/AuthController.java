@@ -61,8 +61,8 @@ public class AuthController {
         try {
             User newUser = userService.registerUser(username, password);
 
-            // Send approval email to admin
-            emailService.sendAccountApprovalRequest(username, newUser.getId());
+            // Send approval email to admin with token
+            emailService.sendAccountApprovalRequest(username, newUser.getId(), newUser.getApprovalToken());
 
             model.addAttribute("success", "Registration successful! Your account is pending approval. You will receive an email once approved.");
             model.addAttribute("recaptchaSiteKey", recaptchaSiteKey);

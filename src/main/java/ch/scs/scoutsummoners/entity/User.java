@@ -2,6 +2,7 @@ package ch.scs.scoutsummoners.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +25,12 @@ public class User {
 
     @Column(nullable = false)
     private boolean enabled = false;
+
+    @Column
+    private String approvalToken;
+
+    @Column
+    private LocalDateTime approvalTokenExpiry;
 
     public User() {
     }
@@ -72,5 +79,21 @@ public class User {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getApprovalToken() {
+        return approvalToken;
+    }
+
+    public void setApprovalToken(String approvalToken) {
+        this.approvalToken = approvalToken;
+    }
+
+    public LocalDateTime getApprovalTokenExpiry() {
+        return approvalTokenExpiry;
+    }
+
+    public void setApprovalTokenExpiry(LocalDateTime approvalTokenExpiry) {
+        this.approvalTokenExpiry = approvalTokenExpiry;
     }
 }
