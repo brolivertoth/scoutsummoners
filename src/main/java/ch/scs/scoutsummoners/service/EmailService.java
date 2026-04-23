@@ -16,6 +16,9 @@ public class EmailService {
     @Value("${spring.mail.from}")
     private String fromEmail;
 
+    @Value("${app.base-url}")
+    private String baseUrl;
+
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
@@ -26,8 +29,8 @@ public class EmailService {
         message.setTo(adminEmail);
         message.setSubject("New Account Registration - Approval Required");
 
-        String approvalUrl = "http://localhost:8080/admin/approve/" + userId;
-        String rejectionUrl = "http://localhost:8080/admin/reject/" + userId;
+        String approvalUrl = baseUrl + "/admin/approve/" + userId;
+        String rejectionUrl = baseUrl + "/admin/reject/" + userId;
 
         message.setText(
             "A new user has registered:\n\n" +
@@ -49,7 +52,7 @@ public class EmailService {
         message.setText(
             "Hello " + username + ",\n\n" +
             "Your ScoutSummoners account has been approved!\n" +
-            "You can now log in at: http://localhost:8080/login\n\n" +
+            "You can now log in at: " + baseUrl + "/login\n\n" +
             "Best regards,\n" +
             "ScoutSummoners Team"
         );

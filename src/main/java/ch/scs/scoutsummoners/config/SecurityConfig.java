@@ -28,30 +28,29 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
-        // Create custom reCAPTCHA authentication filter
-        RecaptchaAuthenticationFilter recaptchaAuthenticationFilter = new RecaptchaAuthenticationFilter(recaptchaService);
-        recaptchaAuthenticationFilter.setAuthenticationManager(authenticationManager);
-        recaptchaAuthenticationFilter.setFilterProcessesUrl("/perform_login");
-        recaptchaAuthenticationFilter.setAuthenticationSuccessHandler((request, response, authentication) -> {
-            response.sendRedirect("/dashboard");
-        });
-        recaptchaAuthenticationFilter.setAuthenticationFailureHandler((request, response, exception) -> {
-            response.sendRedirect("/login?error");
-        });
+        // Create reCAPTCHA verification filter
+        RecaptchaAuthenticationFilter recaptchaFilter = new RecaptchaAuthenticationFilter(recaptchaService);
 
         http
             .authenticationManager(authenticationManager)
             .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/register", "/css/**", "/js/**", "/login", "/perform_login", "/admin/approve/**", "/admin/reject/**").permitAll()
+                .requestMatchers("/", "/register", "/css/**", "/js/**", "/login", "/admin/approve/**", "/admin/reject/**").permitAll()
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(recaptchaAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(recaptchaFilter, UsernamePasswordAuthenticationFilter.class)
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/perform_login")
-                .defaultSuccessUrl("/dashboard")
-                .failureUrl("/login?error")
+                .defaultSuccessUrl("/dashboard", true)
+                .failureHandler((request, response, exception) -> {
+                    // Check if the exception is due to disabled account
+                    if (exception instanceof org.springframework.security.authentication.DisabledException) {
+                        response.sendRedirect("/login?disabled");
+                    } else {
+                        response.sendRedirect("/login?error");
+                    }
+                })
                 .permitAll()
             )
             .logout(logout -> logout

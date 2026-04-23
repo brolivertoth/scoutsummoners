@@ -24,7 +24,11 @@
                         <div th:if="${param.error}" class="alert alert-danger">
                             Invalid username or password.
                         </div>
-                        
+
+                        <div th:if="${param.disabled}" class="alert alert-warning">
+                            Your account is pending approval. Please wait for an admin to activate your account.
+                        </div>
+
                         <div th:if="${param.logout}" class="alert alert-info">
                             You have been logged out.
                         </div>

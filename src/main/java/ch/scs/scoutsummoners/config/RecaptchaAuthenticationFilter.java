@@ -6,16 +6,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
 /**
- * Custom authentication filter that verifies reCAPTCHA before processing login
+ * Filter that verifies reCAPTCHA before allowing login attempts
  */
-public class RecaptchaAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+public class RecaptchaAuthenticationFilter extends OncePerRequestFilter {
 
     private final RecaptchaService recaptchaService;
 
@@ -24,21 +22,21 @@ public class RecaptchaAuthenticationFilter extends UsernamePasswordAuthenticatio
     }
 
     @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
-            throws AuthenticationException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
-        // Only verify reCAPTCHA for POST requests (actual login submissions)
-        if ("POST".equalsIgnoreCase(request.getMethod())) {
-            // Get reCAPTCHA response from request
+        // Only verify reCAPTCHA for login POST requests
+        if ("/perform_login".equals(request.getServletPath()) && "POST".equalsIgnoreCase(request.getMethod())) {
             String recaptchaResponse = request.getParameter("g-recaptcha-response");
 
-            // Verify reCAPTCHA before proceeding with authentication
+            // Verify reCAPTCHA
             if (recaptchaResponse == null || !recaptchaService.verifyRecaptcha(recaptchaResponse)) {
-                throw new BadCredentialsException("Invalid reCAPTCHA verification");
+                response.sendRedirect("/login?error");
+                return;
             }
         }
 
-        // If reCAPTCHA is valid, proceed with normal authentication
-        return super.attemptAuthentication(request, response);
+        // If reCAPTCHA is valid or not a login request, continue
+        filterChain.doFilter(request, response);
     }
 }
