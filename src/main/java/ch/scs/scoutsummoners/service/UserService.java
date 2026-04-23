@@ -25,6 +25,7 @@ public class UserService {
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
         user.setRole("USER");
+        user.setEnabled(false); // Account starts disabled, requires admin approval
 
         return userRepository.save(user);
     }

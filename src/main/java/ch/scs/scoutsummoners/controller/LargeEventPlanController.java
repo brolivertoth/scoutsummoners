@@ -328,6 +328,7 @@ public class LargeEventPlanController {
         // Create the survey
         TimeSlotSurvey survey = new TimeSlotSurvey(surveyTitle, surveyDescription, user);
         survey.setOpenToAll(plan.isOpenToAll());
+        survey.setLargeEventPlan(plan); // Link survey back to large event plan
 
         // Copy invited users from plan to survey
         if (!plan.isOpenToAll()) {

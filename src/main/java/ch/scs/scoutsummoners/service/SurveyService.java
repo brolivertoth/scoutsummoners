@@ -86,14 +86,36 @@ public class SurveyService {
         }
 
         // Create event
+        // If no end time is set, default to 2 hours after start time
+        LocalDateTime endTime = selectedTimeSlot.getEndTime();
+        if (endTime == null) {
+            endTime = selectedTimeSlot.getStartTime().plusHours(2);
+        }
+
         Event event = new Event(
                 survey.getTitle(),
                 survey.getDescription(),
                 selectedTimeSlot.getStartTime(),
-                selectedTimeSlot.getEndTime(),
+                endTime,
                 survey.getCreator()
         );
         event.setLocation(location);
+
+        // Link event to large event plan if survey was created from one
+        if (survey.getLargeEventPlan() != null) {
+            event.setLargeEventPlan(survey.getLargeEventPlan());
+            // Inherit visibility settings from large event plan
+            event.setOpenToAll(survey.getLargeEventPlan().isOpenToAll());
+            if (!survey.getLargeEventPlan().isOpenToAll()) {
+                event.getInvitedUsers().addAll(survey.getLargeEventPlan().getInvitedUsers());
+            }
+        } else {
+            // Otherwise inherit from survey
+            event.setOpenToAll(survey.isOpenToAll());
+            if (!survey.isOpenToAll()) {
+                event.getInvitedUsers().addAll(survey.getInvitedUsers());
+            }
+        }
 
         // Add all voters as participants
         for (User voter : selectedTimeSlot.getVoters()) {

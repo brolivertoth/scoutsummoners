@@ -87,6 +87,14 @@
                             </div>
                         </div>
 
+                        <div th:if="${survey.largeEventPlan != null}" class="alert alert-info mb-3">
+                            <i class="bi bi-link-45deg"></i>
+                            This survey is part of a larger event planning.
+                            <a th:href="@{/large-event-planning/{id}(id=${survey.largeEventPlan.id})}" class="alert-link">
+                                <i class="bi bi-box-arrow-up-right"></i> View Large Event Plan: <span th:text="${survey.largeEventPlan.name}"></span>
+                            </a>
+                        </div>
+
                         <div th:if="${survey.createdEvent != null}" class="alert alert-success">
                             <i class="bi bi-check-circle"></i> 
                             An event has been created from this survey. 

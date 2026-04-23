@@ -52,6 +52,10 @@ public class TimeSlotSurvey {
     @JsonIgnoreProperties({"createdEvents", "participatingEvents", "password"})
     private List<User> invitedUsers = new ArrayList<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "large_event_plan_id")
+    private LargeEventPlan largeEventPlan;
+
     public TimeSlotSurvey() {
     }
     
@@ -148,5 +152,13 @@ public class TimeSlotSurvey {
 
     public void setInvitedUsers(List<User> invitedUsers) {
         this.invitedUsers = invitedUsers;
+    }
+
+    public LargeEventPlan getLargeEventPlan() {
+        return largeEventPlan;
+    }
+
+    public void setLargeEventPlan(LargeEventPlan largeEventPlan) {
+        this.largeEventPlan = largeEventPlan;
     }
 }

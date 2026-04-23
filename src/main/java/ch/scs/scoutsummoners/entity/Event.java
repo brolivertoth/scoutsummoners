@@ -56,7 +56,11 @@ public class Event {
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
-    
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "large_event_plan_id")
+    private LargeEventPlan largeEventPlan;
+
     public Event() {
     }
     
@@ -155,5 +159,13 @@ public class Event {
 
     public void setInvitedUsers(List<User> invitedUsers) {
         this.invitedUsers = invitedUsers;
+    }
+
+    public LargeEventPlan getLargeEventPlan() {
+        return largeEventPlan;
+    }
+
+    public void setLargeEventPlan(LargeEventPlan largeEventPlan) {
+        this.largeEventPlan = largeEventPlan;
     }
 }

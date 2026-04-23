@@ -180,14 +180,13 @@
                         </a>
                     </div>
 
-                     <!--<div class="alert alert-light border">
-                        <small class="text-muted">
-                            <i class="bi bi-eye"></i>
-                            <span th:if="${survey.openToAll}">Visible to all users</span>
-                            <span th:if="${!survey.openToAll}">Visible to invited users only</span>
-                            <span class="ms-3"><i class="bi bi-clock-history"></i> Created <span th:text="${#temporals.format(survey.createdAt, 'dd MMM yyyy')}"></span></span>
-                        </small>
-                    </div> -->
+                    <div th:if="${survey.createdEvent != null}" class="alert alert-success mb-3">
+                        <i class="bi bi-check-circle"></i>
+                        <strong>Event Created!</strong> A calendar event has been created from this survey.
+                        <a th:href="@{/events/{id}(id=${survey.createdEvent.id})}" class="alert-link">
+                            <i class="bi bi-box-arrow-up-right"></i> View Calendar Event
+                        </a>
+                    </div>
 
                     <!-- Survey Results Table -->
                     <h6 class="mt-3 mb-2">Current Votes:</h6>
