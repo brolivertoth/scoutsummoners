@@ -20,7 +20,7 @@ public class LargeEventPlan {
     @Column(length = 2000)
     private String description;
 
-    @Column(length = 50000)
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)

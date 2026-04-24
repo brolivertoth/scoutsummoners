@@ -11,8 +11,11 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <style>
         .ql-editor {
-            min-height: 200px;
+            min-height: 150px;
             color: #ffffff;
+        }
+        #quill-editor .ql-editor {
+            min-height: 200px;
         }
         .ql-toolbar {
             background-color: #2a2a2a;
@@ -373,6 +376,7 @@
                         <h6>Visibility Settings</h6>
                         <div class="mb-3">
                             <div class="form-check">
+                                <input type="hidden" name="openToAll" value="false">
                                 <input class="form-check-input" type="checkbox" id="editOpenToAll" name="openToAll" value="true" th:checked="${plan.openToAll}" onchange="toggleEditUserSelection()">
                                 <label class="form-check-label" for="editOpenToAll">
                                     Visible to all users
@@ -380,13 +384,15 @@
                             </div>
                         </div>
                         <div class="mb-3" id="editUserSelectionDiv" th:style="${plan.openToAll} ? 'display: none;' : 'display: block;'">
-                            <label class="form-label">Invite specific users:</label>
-                            <select class="form-select" name="invitedUserIds" multiple size="5">
-                                <option th:each="u : ${allUsers}" th:value="${u.id}" th:text="${u.username}"
-                                        th:if="${u.id != user.id}"
-                                        th:selected="${plan.invitedUsers.contains(u)}"></option>
-                            </select>
-                            <small class="form-text text-muted">Hold Ctrl (Cmd on Mac) to select multiple users</small>
+                            <label class="form-label">Invite Users</label>
+                            <div class="position-relative">
+                                <input type="text" class="form-control" id="editUserSearchInput" placeholder="Type username to search..." autocomplete="off">
+                                <div id="editUserSearchResults" class="list-group position-absolute w-100" style="z-index: 1000; max-height: 200px; overflow-y: auto; display: none;"></div>
+                            </div>
+                            <div id="editSelectedUsersContainer" class="mt-2">
+                                <small class="text-muted">No users selected</small>
+                            </div>
+                            <div id="editInvitedUsersInputs"></div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -523,7 +529,25 @@
     <script th:src="@{/js/app.js}"></script>
     <script th:inline="javascript">
         var quill = null;
-        var initialContent = /*[[${plan.content}]]*/ '';
+        var initialContent = [[${plan.content}]];
+        const currentUserId = [[${user.id}]];
+
+        // Manually build user arrays to avoid Hibernate serialization issues
+        const allUsers = [];
+        /*[# th:each="u : ${allUsers}"]*/
+        /*[# th:if="${u != null}"]*/
+        allUsers.push({id: [[${u.id}]], username: [[${u.username}]]});
+        /*[/]*/
+        /*[/]*/
+
+        const invitedUsers = [];
+        /*[# th:each="u : ${plan.invitedUsers}"]*/
+        /*[# th:if="${u != null}"]*/
+        invitedUsers.push({id: [[${u.id}]], username: [[${u.username}]]});
+        /*[/]*/
+        /*[/]*/
+
+        let editSelectedUsers = new Set();
 
         function toggleEditMode() {
             var displayDiv = document.getElementById('content-display');
@@ -569,32 +593,42 @@
 
         // Submit form with Quill content
         document.getElementById('content-form').onsubmit = function() {
-            document.getElementById('content-input').value = quill.root.innerHTML;
+            if (quill) {
+                document.getElementById('content-input').value = quill.root.innerHTML;
+            }
             return true;
         };
 
-        // Initialize Quill for new comment
-        var newCommentQuill = new Quill('#new-comment-editor', {
-            theme: 'snow',
-            placeholder: 'Share your thoughts...',
-            modules: {
-                toolbar: [
-                    ['bold', 'italic', 'underline', 'strike'],
-                    ['blockquote', 'code-block'],
-                    [{ 'header': 1 }, { 'header': 2 }],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    [{ 'color': [] }, { 'background': [] }],
-                    ['link', 'image'],
-                    ['clean']
-                ]
+        // Initialize Quill for new comment - wrapped to ensure DOM is ready
+        var newCommentQuill = null;
+        document.addEventListener('DOMContentLoaded', function() {
+            var editorElement = document.getElementById('new-comment-editor');
+            if (editorElement && !newCommentQuill) {
+                newCommentQuill = new Quill('#new-comment-editor', {
+                    theme: 'snow',
+                    placeholder: 'Share your thoughts...',
+                    modules: {
+                        toolbar: [
+                            ['bold', 'italic', 'underline', 'strike'],
+                            ['blockquote', 'code-block'],
+                            [{ 'header': 1 }, { 'header': 2 }],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            [{ 'color': [] }, { 'background': [] }],
+                            ['link', 'image'],
+                            ['clean']
+                        ]
+                    }
+                });
+
+                // Submit new comment form
+                document.getElementById('new-comment-form').onsubmit = function() {
+                    if (newCommentQuill) {
+                        document.getElementById('new-comment-content').value = newCommentQuill.root.innerHTML;
+                    }
+                    return true;
+                };
             }
         });
-
-        // Submit new comment form
-        document.getElementById('new-comment-form').onsubmit = function() {
-            document.getElementById('new-comment-content').value = newCommentQuill.root.innerHTML;
-            return true;
-        };
 
         // Store reply editors
         var replyEditors = {};
@@ -635,7 +669,130 @@
         function toggleEditUserSelection() {
             var checkbox = document.getElementById('editOpenToAll');
             var userDiv = document.getElementById('editUserSelectionDiv');
-            userDiv.style.display = checkbox.checked ? 'none' : 'block';
+            if (checkbox.checked) {
+                userDiv.style.display = 'none';
+                editSelectedUsers.clear();
+                updateEditSelectedUsersDisplay();
+            } else {
+                userDiv.style.display = 'block';
+            }
+        }
+
+        // Initialize edit modal when opened
+        function initializeEditModal() {
+            // Clear and repopulate editSelectedUsers with current invited users
+            editSelectedUsers.clear();
+            invitedUsers.forEach(user => {
+                editSelectedUsers.add(user.id);
+            });
+            updateEditSelectedUsersDisplay();
+
+            // Update visibility section display based on current openToAll value
+            const openToAllCheckbox = document.getElementById('editOpenToAll');
+            const userDiv = document.getElementById('editUserSelectionDiv');
+            if (openToAllCheckbox && openToAllCheckbox.checked) {
+                userDiv.style.display = 'none';
+            } else {
+                userDiv.style.display = 'block';
+            }
+        }
+
+        // Initialize edit modal with existing invited users
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEditModal();
+
+            // Re-initialize when modal is shown
+            const editModal = document.getElementById('editPlanModal');
+            if (editModal) {
+                editModal.addEventListener('show.bs.modal', function() {
+                    initializeEditModal();
+                });
+            }
+
+            // Handle edit modal user search
+            const editSearchInput = document.getElementById('editUserSearchInput');
+            const editSearchResults = document.getElementById('editUserSearchResults');
+
+            editSearchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+
+                if (query.length === 0) {
+                    editSearchResults.style.display = 'none';
+                    return;
+                }
+
+                const filteredUsers = allUsers.filter(user =>
+                    user.id !== currentUserId &&
+                    user.username.toLowerCase().includes(query) &&
+                    !editSelectedUsers.has(user.id)
+                );
+
+                if (filteredUsers.length === 0) {
+                    editSearchResults.style.display = 'none';
+                    return;
+                }
+
+                editSearchResults.innerHTML = filteredUsers.map(user => `
+                    <button type="button" class="list-group-item list-group-item-action" data-user-id="${user.id}" data-username="${user.username}">
+                        ${user.username}
+                    </button>
+                `).join('');
+
+                editSearchResults.style.display = 'block';
+
+                editSearchResults.querySelectorAll('button').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const userId = parseInt(this.dataset.userId);
+                        const username = this.dataset.username;
+                        addEditSelectedUser(userId, username);
+                        editSearchInput.value = '';
+                        editSearchResults.style.display = 'none';
+                    });
+                });
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!editSearchInput.contains(e.target) && !editSearchResults.contains(e.target)) {
+                    editSearchResults.style.display = 'none';
+                }
+            });
+        });
+
+        function addEditSelectedUser(userId, username) {
+            editSelectedUsers.add(userId);
+            updateEditSelectedUsersDisplay();
+        }
+
+        function removeEditSelectedUser(userId) {
+            editSelectedUsers.delete(userId);
+            updateEditSelectedUsersDisplay();
+        }
+
+        function updateEditSelectedUsersDisplay() {
+            const container = document.getElementById('editSelectedUsersContainer');
+            const inputsContainer = document.getElementById('editInvitedUsersInputs');
+
+            if (editSelectedUsers.size === 0) {
+                container.innerHTML = '<small class="text-muted">No users selected</small>';
+                inputsContainer.innerHTML = '';
+                return;
+            }
+
+            const badges = Array.from(editSelectedUsers).map(userId => {
+                const user = allUsers.find(u => u.id === userId);
+                return `
+                    <span class="badge bg-secondary me-1 mb-1" style="font-size: 0.9rem;">
+                        ${user.username}
+                        <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem;" onclick="removeEditSelectedUser(${userId})"></button>
+                    </span>
+                `;
+            }).join('');
+            container.innerHTML = badges;
+
+            const inputs = Array.from(editSelectedUsers).map(userId =>
+                `<input type="hidden" name="invitedUserIds" value="${userId}">`
+            ).join('');
+            inputsContainer.innerHTML = inputs;
         }
 
         // Survey Time Slot Management

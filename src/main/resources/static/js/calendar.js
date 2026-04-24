@@ -359,12 +359,21 @@ function createEventDetailHTML(event) {
 
 function handleRSVP(eventId, action) {
     const url = `/events/${eventId}/${action}`;
-    
+
+    // Get CSRF token from meta tag
+    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+    const headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    };
+    if (csrfToken && csrfHeader) {
+        headers[csrfHeader] = csrfToken;
+    }
+
     fetch(url, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        }
+        headers: headers,
     })
     .then(response => {
         if (response.ok) {
@@ -473,11 +482,20 @@ function createQuickEvent() {
         });
     }
 
+    // Get CSRF token from meta tag
+    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+    const headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    };
+    if (csrfToken && csrfHeader) {
+        headers[csrfHeader] = csrfToken;
+    }
+
     fetch('/calendar/events/quick-create', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: headers,
         body: formData
     })
     .then(response => {

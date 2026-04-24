@@ -27,7 +27,8 @@
                         
                         <div class="mb-3">
                             <strong><i class="bi bi-person"></i> Created by:</strong>
-                            <span th:text="${survey.creator.username}"></span>
+                            <span th:if="${survey.creator != null}" th:text="${survey.creator.username}"></span>
+                            <span th:if="${survey.creator == null}" class="text-muted">Unknown</span>
                         </div>
 
                         <div class="mb-3">
@@ -39,9 +40,9 @@
                         <div th:if="${!survey.openToAll && survey.invitedUsers.size() > 0}" class="mb-3">
                             <strong><i class="bi bi-people"></i> Invited Users:</strong>
                             <div class="mt-2">
-                                <span th:each="invitedUser, iterStat : ${survey.invitedUsers}" class="badge bg-secondary me-1">
-                                    <span th:text="${invitedUser.username}"></span>
-                                </span>
+                                <th:block th:each="invitedUser, iterStat : ${survey.invitedUsers}">
+                                    <span th:if="${invitedUser != null}" class="badge bg-secondary me-1" th:text="${invitedUser.username}"></span>
+                                </th:block>
                             </div>
                         </div>
 
@@ -106,9 +107,9 @@
                                 
                                 <div th:if="${timeSlot.voters.size() > 0}" class="voters-list mt-2">
                                     <small class="text-muted">
-                                        Voted: 
+                                        Voted:
                                         <span th:each="voter, iterStat : ${timeSlot.voters}">
-                                            <span th:text="${voter.username}"></span><span th:if="${!iterStat.last}">, </span>
+                                            <span th:if="${voter != null}" th:text="${voter.username}"></span><span th:if="${!iterStat.last}">, </span>
                                         </span>
                                     </small>
                                 </div>

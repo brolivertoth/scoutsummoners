@@ -17,7 +17,7 @@ public class Comment {
     @Column(length = 255)
     private String title;
 
-    @Column(length = 5000, nullable = false)
+    @Column(columnDefinition = "NVARCHAR(MAX)", nullable = false)
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)
